@@ -133,15 +133,6 @@ function clearForm(){
   document.getElementById('image').value = "";
 }
 
-window.onload = function(){
-  if(window.location.hash === "#admin"){
-    document.getElementById("loginBox").style.display = "block";
-    document.getElementById("adminPanel").style.display = "block";
-  } else {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "none";
-  }
-
   loadProducts();
 }
 
