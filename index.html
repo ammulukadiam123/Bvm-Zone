@@ -6,6 +6,7 @@
     button { padding:8px 12px; margin:5px; }
     .product { border:1px solid #ccc; padding:10px; margin:10px; }
   </style></head><body><!-- LOGIN --><div id="loginBox" style="display:none;">
+<div id="adminPanel" style="display:none;">
   <h2>Admin Login</h2>
   <input type="text" id="user" placeholder="Username"><br>
   <input type="password" id="pass" placeholder="Password"><br>
@@ -132,10 +133,16 @@ function clearForm(){
   document.getElementById('image').value = "";
 }
 
-// LOAD ON START
-loadProducts();
-if(window.location.hash === "#admin"){
-  document.getElementById("loginBox").style.display = "block";
+window.onload = function(){
+  if(window.location.hash === "#admin"){
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("adminPanel").style.display = "block";
+  } else {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "none";
+  }
+
+  loadProducts();
 }
 
 </script></body>
