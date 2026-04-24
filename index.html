@@ -1,24 +1,28 @@
 <!DOCTYPE html><html>
 <head>
-  <title>BVM Zone</title>  <!-- Firebase CDN -->  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>  <style>
-    body { font-family: Arial; padding:20px; }
-    input { margin:5px; padding:8px; }
-    button { padding:8px 12px; margin:5px; }
-    .product { border:1px solid #ccc; padding:10px; margin:10px; }
-  </style></head><body><!-- LOGIN --><div id="loginBox" style="display:none;">
-<div id="adminPanel" style="display:none;">
-  <h2>Admin Login</h2>
-  <input type="text" id="user" placeholder="Username"><br>
-  <input type="password" id="pass" placeholder="Password"><br>
+  <title>BVM Zone</title>  <!-- Firebase -->  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>  <style>
+    body { font-family: Arial; margin:0; }
+    .header { background:black; color:white; padding:15px; text-align:center; }
+    .container { padding:15px; }
+    input { width:100%; padding:10px; margin:5px 0; }
+    button { padding:8px; margin:5px; }
+    .product { border:1px solid #ccc; padding:10px; margin:10px 0; }
+  </style></head><body><div class="header">BVM Zone 🔥</div><!-- LOGIN (hidden) --><div id="loginBox" style="display:none;" class="container">
+  <h3>Admin Login</h3>
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
   <button onclick="login()">Login</button>
-</div><!-- ADMIN PANEL --><div id="adminPanel" style="display:none;">
-  <h2>Add / Edit Product</h2>
-  <input type="text" id="name" placeholder="Product Name">
-  <input type="text" id="price" placeholder="Price">
-  <input type="text" id="image" placeholder="Image URL">
-  <button onclick="saveProduct()">Save Product</button>
-</div><hr><h2>Products</h2>
-<div id="productList"></div><script>
+</div><!-- ADMIN PANEL --><div id="adminPanel" style="display:none;" class="container">
+  <h3>Add / Edit Product</h3>
+  <input id="name" placeholder="Product Name">
+  <input id="price" placeholder="Price">
+  <input id="image" placeholder="Image URL">
+  <button onclick="saveProduct()">Save</button>
+</div><!-- PRODUCTS --><div class="container">
+  <h2>Products</h2>
+  <div id="productList"></div>
+</div><script>
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",
   authDomain: "bvm-fashion.firebaseapp.com",
@@ -31,110 +35,102 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const WA = '919848978410';
+const WA = "9848978410";
 let isAdmin = false;
 let editId = null;
 
+// Show login only if #admin
+if(window.location.hash === "#admin"){
+  document.getElementById("loginBox").style.display = "block";
+}
+
 // LOGIN
-const USERNAME = "bvm";
-const PASSWORD = "1624";
-
 function login(){
-  let u = document.getElementById("user").value;
-  let p = document.getElementById("pass").value;
-
-  if(u === USERNAME && p === PASSWORD){
+  if(user.value === "bvm" && pass.value === "1624"){
     isAdmin = true;
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
+    loginBox.style.display = "none";
+    adminPanel.style.display = "block";
     loadProducts();
   } else {
-    alert("Wrong login ❌");
+    alert("Wrong login");
   }
 }
 
-// SAVE / UPDATE PRODUCT
+// SAVE / UPDATE
 async function saveProduct(){
-  let name = document.getElementById('name').value;
-  let price = document.getElementById('price').value;
-  let image = document.getElementById('image').value;
-
-  if(!name || !price || !image){
-    alert("Fill all fields");
-    return;
-  }
+  let data = {
+    name: name.value,
+    price: price.value,
+    image: image.value,
+    hidden: false
+  };
 
   if(editId){
-    await db.collection("products").doc(editId).update({
-      name, price, image
-    });
+    await db.collection("products").doc(editId).update(data);
     editId = null;
   } else {
-    await db.collection("products").add({
-      name, price, image
-    });
+    await db.collection("products").add(data);
   }
 
-  alert("Saved ✅");
+  alert("Saved");
   loadProducts();
-  clearForm();
 }
 
 // DELETE
 async function deleteProduct(id){
-  if(confirm("Delete this product?")){
-    await db.collection("products").doc(id).delete();
-    loadProducts();
-  }
+  await db.collection("products").doc(id).delete();
+  loadProducts();
 }
 
 // EDIT
-function editProduct(id,name,price,image){
-  document.getElementById('name').value = name;
-  document.getElementById('price').value = price;
-  document.getElementById('image').value = image;
+function editProduct(id,p){
+  name.value = p.name;
+  price.value = p.price;
+  image.value = p.image;
   editId = id;
 }
 
-// LOAD PRODUCTS
-function loadProducts();{
+// HIDE
+async function toggleHide(id,current){
+  await db.collection("products").doc(id).update({hidden: !current});
+  loadProducts();
+}
+
+// LOAD
+function loadProducts(){
   let list = document.getElementById("productList");
   list.innerHTML = "";
 
-  db.collection("products").get().then((data)=>{
-    data.forEach(doc=>{
+  db.collection("products").get().then(res=>{
+    res.forEach(doc=>{
       let p = doc.data();
+
+      if(p.hidden && !isAdmin) return;
 
       list.innerHTML += `
         <div class="product">
-          <img src="${p.image}" style="width:100%;height:180px;object-fit:cover">
+          <img src="${p.image}" style="width:100%;height:150px;object-fit:cover">
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
 
-          <a href="https://wa.me/${WA}?text=${encodeURIComponent('Hello, I want to order:\n\n' + p.name + '\nPrice: ₹' + p.price + '\nImage: ' + p.image)}">
+          <a href="https://wa.me/${WA}?text=${encodeURIComponent(
+            'I want ' + p.name + ' Price: ₹' + p.price + ' Link: ' + p.image
+          )}">
             <button>Order on WhatsApp</button>
           </a>
 
           ${isAdmin ? `
             <br>
-            <button onclick="editProduct('${doc.id}','${p.name}','${p.price}','${p.image}')">Edit</button>
-            <button onclick="deleteProduct('${doc.id}')" style="background:red;color:white;">Delete</button>
-          ` : ''}
+            <button onclick='editProduct("${doc.id}", ${JSON.stringify(p)})'>Edit</button>
+            <button onclick='deleteProduct("${doc.id}")'>Delete</button>
+            <button onclick='toggleHide("${doc.id}", ${p.hidden})'>${p.hidden ? "Unhide" : "Hide"}</button>
+          ` : ""}
         </div>
       `;
     });
   });
 }
 
-// CLEAR FORM
-function clearForm(){
-  document.getElementById('name').value = "";
-  document.getElementById('price').value = "";
-  document.getElementById('image').value = "";
-}
-
-  loadProducts();
-}
-
+loadProducts();
 </script></body>
 </html>
