@@ -106,7 +106,10 @@ function loadProducts(){
           <img src="${p.image}" style="width:100%;height:180px;object-fit:cover">
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
-          <a href="https://wa.me/${WA}?text=${encodeURIComponent('I want ' + p.name)}">
+          <a href="https://wa.me/${WA}?text=${encodeURIComponent(
+  'Hello, I want to order:\n\n' +
+  p.name + '\nPrice: ₹' + p.price + '\nImage: ' + p.image
+)}">
             <button>Order on WhatsApp</button>
           </a>
         </div>
