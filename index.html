@@ -7,7 +7,11 @@
     input { width:100%; padding:10px; margin:5px 0; }
     button { padding:8px; margin:5px; }
     .product { border:1px solid #ccc; padding:10px; margin:10px 0; }
-  </style></head><body><div class="header">BVM Zone 🔥</div><!-- LOGIN (hidden) --><div id="loginBox" style="display:none;" class="container">
+  </style></head><body><div class="header">BVM Zone 🔥</div><!-- POSTER --><div style="background:url('https://i.ibb.co/67v7wXDT/GREEN-2.jpg') center/cover no-repeat;height:180px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;">
+  Welcome to BVM Zone 👕
+</div><!-- SEARCH --><div class="container">
+  <input type="text" id="search" placeholder="Search products..." onkeyup="loadProducts()">
+</div><!-- LOGIN --><div id="loginBox" style="display:none;" class="container">
   <h3>Admin Login</h3>
   <input id="user" placeholder="Username">
   <input id="pass" type="password" placeholder="Password">
@@ -17,12 +21,14 @@
   <input id="name" placeholder="Product Name">
   <input id="price" placeholder="Price">
   <input id="image" placeholder="Image URL">
+  <input id="category" placeholder="Category">
+  <input id="sizes" placeholder="Sizes (S,M,L,XL)">
+  <input id="colors" placeholder="Colors (Red,Blue)">
   <button onclick="saveProduct()">Save</button>
 </div><!-- PRODUCTS --><div class="container">
   <h2>Products</h2>
   <div id="productList"></div>
 </div><script>
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",
   authDomain: "bvm-fashion.firebaseapp.com",
@@ -35,16 +41,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const WA = "9848978410";
+const WA = "919848978410";
 let isAdmin = false;
 let editId = null;
 
-// Show login only if #admin
 if(window.location.hash === "#admin"){
-  document.getElementById("loginBox").style.display = "block";
+  loginBox.style.display = "block";
 }
 
-// LOGIN
 function login(){
   if(user.value === "bvm" && pass.value === "1624"){
     isAdmin = true;
@@ -56,14 +60,21 @@ function login(){
   }
 }
 
-// SAVE / UPDATE
 async function saveProduct(){
   let data = {
     name: name.value,
     price: price.value,
     image: image.value,
+    category: category.value,
+    sizes: sizes.value,
+    colors: colors.value,
     hidden: false
   };
+
+  if(!data.name || !data.price || !data.image){
+    alert("Fill all fields");
+    return;
+  }
 
   if(editId){
     await db.collection("products").doc(editId).update(data);
@@ -72,34 +83,37 @@ async function saveProduct(){
     await db.collection("products").add(data);
   }
 
-  alert("Saved");
+  alert("Saved ✅");
   loadProducts();
 }
 
-// DELETE
 async function deleteProduct(id){
-  await db.collection("products").doc(id).delete();
-  loadProducts();
+  if(confirm("Delete product?")){
+    await db.collection("products").doc(id).delete();
+    loadProducts();
+  }
 }
 
-// EDIT
-function editProduct(id,p){
-  name.value = p.name;
-  price.value = p.price;
-  image.value = p.image;
+function editProduct(id,nameVal,priceVal,imageVal,catVal,sizeVal,colorVal){
+  name.value = nameVal;
+  price.value = priceVal;
+  image.value = imageVal;
+  category.value = catVal;
+  sizes.value = sizeVal;
+  colors.value = colorVal;
   editId = id;
 }
 
-// HIDE
 async function toggleHide(id,current){
   await db.collection("products").doc(id).update({hidden: !current});
   loadProducts();
 }
 
-// LOAD
 function loadProducts(){
   let list = document.getElementById("productList");
   list.innerHTML = "";
+
+  let search = document.getElementById("search").value.toLowerCase();
 
   db.collection("products").get().then(res=>{
     res.forEach(doc=>{
@@ -107,24 +121,27 @@ function loadProducts(){
 
       if(p.hidden && !isAdmin) return;
 
+      if(search && !p.name.toLowerCase().includes(search) && !p.category.toLowerCase().includes(search)) return;
+
       list.innerHTML += `
         <div class="product">
-          <img src="${p.image}" style="width:100%;height:auto;max-height:200px;object-fit:contain;">
+          <img src="${p.image}" style="width:100%;height:auto;max-height:200px;object-fit:contain;display:block;margin:auto;">
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
+          <p><b>${p.category || ''}</b></p>
+          <p>Sizes: ${p.sizes || ''}</p>
+          <p>Colors: ${p.colors || ''}</p>
 
-          <a href="https://wa.me/${WA}?text=${encodeURIComponent(
-            'I want ' + p.name + ' Price: ₹' + p.price + ' Link: ' + p.image
-          )}">
+          <a href="https://wa.me/${WA}?text=${encodeURIComponent('I want ' + p.name + ' Price: ₹' + p.price + ' Sizes: ' + p.sizes + ' Colors: ' + p.colors + ' Image: ' + p.image)}">
             <button>Order on WhatsApp</button>
           </a>
 
           ${isAdmin ? `
             <br>
-            <button onclick='editProduct("${doc.id}", ${JSON.stringify(p)})'>Edit</button>
-            <button onclick='deleteProduct("${doc.id}")'>Delete</button>
-            <button onclick='toggleHide("${doc.id}", ${p.hidden})'>${p.hidden ? "Unhide" : "Hide"}</button>
-          ` : ""}
+            <button onclick="editProduct('${doc.id}','${p.name}','${p.price}','${p.image}','${p.category || ''}','${p.sizes || ''}','${p.colors || ''}')">Edit</button>
+            <button onclick="deleteProduct('${doc.id}')">Delete</button>
+            <button onclick="toggleHide('${doc.id}', ${p.hidden})">${p.hidden ? 'Unhide' : 'Hide'}</button>
+          ` : ''}
         </div>
       `;
     });
