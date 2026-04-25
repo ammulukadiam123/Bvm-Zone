@@ -22,8 +22,8 @@
   <input id="price" placeholder="Price">
   <input id="image" placeholder="Image URL">
   <input id="category" placeholder="Category">
-  <input id="sizes" placeholder="Sizes (S,M,L,XL)">
-  <input id="colors" placeholder="Colors (Red,Blue)">
+  <input id="sizes" placeholder="Sizes (S,M,L,XL,XXL)">
+  <input id="colors" placeholder="Colors (Red,Blue,white,black,pink)">
   <button onclick="saveProduct()">Save</button>
 </div><!-- PRODUCTS --><div class="container">
   <h2>Products</h2>
@@ -61,30 +61,42 @@ function login(){
 }
 
 async function saveProduct(){
+  let nameVal = document.getElementById("name").value.trim();
+  let priceVal = document.getElementById("price").value.trim();
+  let imageVal = document.getElementById("image").value.trim();
+  let categoryVal = document.getElementById("category").value;
+  let sizesVal = document.getElementById("sizes").value;
+  let colorsVal = document.getElementById("colors").value;
+
+  if(nameVal === "" || priceVal === "" || imageVal === ""){
+    alert("Enter Name, Price, Image");
+    return;
+  }
+
   let data = {
-    name: name.value,
-    price: price.value,
-    image: image.value,
-    category: category.value,
-    sizes: sizes.value,
-    colors: colors.value,
+    name: nameVal,
+    price: priceVal,
+    image: imageVal,
+    category: categoryVal,
+    sizes: sizesVal,
+    colors: colorsVal,
     hidden: false
   };
 
-  if(name.value.trim()==="" || price.value.trim()==="" || image.value.trim()===""){
-  alert("Enter Name, Price, Image");
-  return;
-}
+  try{
+    if(editId){
+      await db.collection("products").doc(editId).update(data);
+      editId = null;
+    } else {
+      await db.collection("products").add(data);
+    }
 
-  if(editId){
-    await db.collection("products").doc(editId).update(data);
-    editId = null;
-  } else {
-    await db.collection("products").add(data);
+    alert("Saved ✅");
+    loadProducts();
+
+  } catch(e){
+    alert("Error: " + e.message);
   }
-
-  alert("Saved ✅");
-  loadProducts();
 }
 
 async function deleteProduct(id){
@@ -129,12 +141,17 @@ function loadProducts(){
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
           <p><b>${p.category || ''}</b></p>
-          <p>Sizes: ${p.sizes || ''}</p>
-          <p>Colors: ${p.colors || ''}</p>
+          <select id="size-${doc.id}">
+  ${(p.sizes || "").split(",").map(s => `<option>${s}</option>`).join("")}
+</select>
 
-          <a href="https://wa.me/${WA}?text=${encodeURIComponent('I want ' + p.name + ' Price: ₹' + p.price + ' Sizes: ' + p.sizes + ' Colors: ' + p.colors + ' Image: ' + p.image)}">
-            <button>Order on WhatsApp</button>
-          </a>
+<select id="color-${doc.id}">
+  ${(p.colors || "").split(",").map(c => `<option>${c}</option>`).join("")}
+</select>
+
+          <a href="#" onclick="orderNow('${doc.id}','${p.name}','${p.price}','${p.image}')">
+  <button>Order on WhatsApp</button>
+</a>
 
           ${isAdmin ? `
             <br>
@@ -149,5 +166,17 @@ function loadProducts(){
 }
 
 loadProducts();
+function orderNow(id,name,price,image){
+  let size = document.getElementById("size-"+id)?.value || "";
+  let color = document.getElementById("color-"+id)?.value || "";
+
+  let msg = `I want ${name}
+Price: ₹${price}
+Size: ${size}
+Color: ${color}
+Image: ${image}`;
+
+  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`);
+}
 </script></body>
 </html>
