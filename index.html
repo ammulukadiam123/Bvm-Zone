@@ -71,10 +71,10 @@ async function saveProduct(){
     hidden: false
   };
 
-  if(!data.name || !data.price || !data.image){
-    alert("Fill all fields");
-    return;
-  }
+  if(name.value.trim()==="" || price.value.trim()==="" || image.value.trim()===""){
+  alert("Enter Name, Price, Image");
+  return;
+}
 
   if(editId){
     await db.collection("products").doc(editId).update(data);
