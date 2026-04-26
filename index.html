@@ -1,182 +1,102 @@
 <!DOCTYPE html><html>
 <head>
-  <title>BVM Zone</title>  <!-- Firebase -->  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>  <style>
-    body { font-family: Arial; margin:0; }
-    .header { background:black; color:white; padding:15px; text-align:center; }
-    .container { padding:15px; }
-    input { width:100%; padding:10px; margin:5px 0; }
-    button { padding:8px; margin:5px; }
-    .product { border:1px solid #ccc; padding:10px; margin:10px 0; }
-  </style></head><body><div class="header">BVM Zone 🔥</div><!-- POSTER --><div style="background:url('https://i.ibb.co/67v7wXDT/GREEN-2.jpg') center/cover no-repeat;height:180px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;">
-  Welcome to BVM Zone 👕
-</div><!-- SEARCH --><div class="container">
-  <input type="text" id="search" placeholder="Search products..." onkeyup="loadProducts()">
-</div><!-- LOGIN --><div id="loginBox" style="display:none;" class="container">
-  <h3>Admin Login</h3>
-  <input id="user" placeholder="Username">
-  <input id="pass" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-</div><!-- ADMIN PANEL --><div id="adminPanel" style="display:none;" class="container">
-  <h3>Add / Edit Product</h3>
-  <input id="name" placeholder="Product Name">
-  <input id="price" placeholder="Price">
-  <input id="image" placeholder="Image URL">
-  <input id="category" placeholder="Category">
-  <input id="sizes" placeholder="Sizes (S,M,L,XL,XXL)">
-  <input id="colors" placeholder="Colors (Red,Blue,white,black,pink)">
-  <button onclick="saveProduct()">Save</button>
-</div><!-- PRODUCTS --><div class="container">
-  <h2>Products</h2>
-  <div id="productList"></div>
-</div><script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",
-  authDomain: "bvm-fashion.firebaseapp.com",
-  projectId: "bvm-fashion",
-  storageBucket: "bvm-fashion.firebasestorage.app",
-  messagingSenderId: "165726059118",
-  appId: "1:165726059118:web:13d89893501eca90b1847f"
-};
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BVM Zone</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
+body{margin:0;font-family:Arial;background:#f5f5f5}
+.header{background:linear-gradient(45deg,black,green);color:white;text-align:center;padding:18px;font-size:24px}
+.products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
+.card{background:white;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);padding:10px}
+.card img{width:100%;height:160px;object-fit:contain}
+.thumb{width:40px;height:40px;margin:3px;border-radius:5px;border:1px solid #ccc;cursor:pointer}
+.color-btn{width:25px;height:25px;border-radius:50%;margin:3px;border:2px solid #ccc;display:inline-block;cursor:pointer}
+.size-btn{padding:5px 8px;margin:3px;border:1px solid #ccc;border-radius:6px;display:inline-block;cursor:pointer}
+.selected{border:2px solid green}
+.btn{width:100%;padding:10px;border:none;border-radius:8px;margin-top:5px}
+.wa{background:#25D366;color:white}
+.admin{padding:10px;background:white;margin:10px;border-radius:10px}
+input{width:100%;padding:8px;margin-top:5px}
+</style></head><body><div class="header">BVM Zone 👕</div><div id="loginBox" class="admin" style="display:none;">
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div><div id="adminPanel" class="admin" style="display:none;">
+<input id="name" placeholder="Product Name">
+<input id="price" placeholder="Price">
+<input id="image" placeholder="Images (comma separated)">
+<input id="category" placeholder="Category">
+<input id="sizes" placeholder="Sizes (S,M,L,XL)">
+<input id="colors" placeholder="Colors (red,black)">
+<button onclick="saveProduct()">Save</button>
+</div><div class="products" id="productList"></div><script>
+const firebaseConfig={apiKey:"AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",authDomain:"bvm-fashion.firebaseapp.com",projectId:"bvm-fashion"};
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-const WA = "919848978410";
-let isAdmin = false;
-let editId = null;
+const WA="919848978410";
+let isAdmin=false,editId=null;
 
-if(window.location.hash === "#admin"){
-  loginBox.style.display = "block";
-}
+if(location.hash==="#admin") loginBox.style.display="block";
 
 function login(){
-  if(user.value === "bvm" && pass.value === "1624"){
-    isAdmin = true;
-    loginBox.style.display = "none";
-    adminPanel.style.display = "block";
-    loadProducts();
-  } else {
-    alert("Wrong login");
-  }
+if(user.value==="bvm"&&pass.value==="1624"){
+isAdmin=true;loginBox.style.display="none";adminPanel.style.display="block";loadProducts();
+}else alert("Wrong login");
 }
 
 async function saveProduct(){
-  let nameVal = document.getElementById("name").value.trim();
-  let priceVal = document.getElementById("price").value.trim();
-  let imageVal = document.getElementById("image").value.trim();
-  let categoryVal = document.getElementById("category").value;
-  let sizesVal = document.getElementById("sizes").value;
-  let colorsVal = document.getElementById("colors").value;
-
-  if(nameVal === "" || priceVal === "" || imageVal === ""){
-    alert("Enter Name, Price, Image");
-    return;
-  }
-
-  let data = {
-    name: nameVal,
-    price: priceVal,
-    image: imageVal,
-    category: categoryVal,
-    sizes: sizesVal,
-    colors: colorsVal,
-    hidden: false
-  };
-
-  try{
-    if(editId){
-      await db.collection("products").doc(editId).update(data);
-      editId = null;
-    } else {
-      await db.collection("products").add(data);
-    }
-
-    alert("Saved ✅");
-    loadProducts();
-
-  } catch(e){
-    alert("Error: " + e.message);
-  }
+let data={name:name.value.trim(),price:price.value.trim(),image:image.value.trim(),category:category.value,sizes:sizes.value,colors:colors.value,hidden:false};
+if(!data.name||!data.price||!data.image){alert("Fill required");return}
+if(editId){await db.collection("products").doc(editId).update(data);editId=null}
+else await db.collection("products").add(data);
+alert("Saved");loadProducts();
 }
 
-async function deleteProduct(id){
-  if(confirm("Delete product?")){
-    await db.collection("products").doc(id).delete();
-    loadProducts();
-  }
-}
+async function deleteProduct(id){await db.collection("products").doc(id).delete();loadProducts()}
+async function toggleHide(id,h){await db.collection("products").doc(id).update({hidden:!h});loadProducts()}
 
-function editProduct(id,nameVal,priceVal,imageVal,catVal,sizeVal,colorVal){
-  name.value = nameVal;
-  price.value = priceVal;
-  image.value = imageVal;
-  category.value = catVal;
-  sizes.value = sizeVal;
-  colors.value = colorVal;
-  editId = id;
-}
+function editProduct(id,p){name.value=p.name;price.value=p.price;image.value=p.image;category.value=p.category;sizes.value=p.sizes;colors.value=p.colors;editId=id}
 
-async function toggleHide(id,current){
-  await db.collection("products").doc(id).update({hidden: !current});
-  loadProducts();
+function changeImage(id,src){document.getElementById("img-"+id).src=src}
+
+function selectSize(id,el){document.querySelectorAll(`#size-${id} .size-btn`).forEach(e=>e.classList.remove("selected"));el.classList.add("selected")}
+
+function selectColor(id,src,el){changeImage(id,src);document.querySelectorAll(`#color-${id} .color-btn`).forEach(e=>e.classList.remove("selected"));el.classList.add("selected")}
+
+function orderNow(id,name,price){
+let size=document.querySelector(`#size-${id} .selected`)?.innerText||"";
+let color=document.querySelector(`#color-${id} .selected`)?.style.background||"";
+let msg=`I want ${name}\nPrice: ₹${price}\nSize: ${size}\nColor: ${color}\nLink: ${location.href}`;
+window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`);
 }
 
 function loadProducts(){
-  let list = document.getElementById("productList");
-  list.innerHTML = "";
+let list=document.getElementById("productList");list.innerHTML="";
+db.collection("products").get().then(res=>{
+res.forEach(doc=>{
+let p=doc.data();if(p.hidden&&!isAdmin)return;
+let imgs=(p.image||"").split(",");let cols=(p.colors||"").split(",");let sz=(p.sizes||"").split(",");
 
-  let search = document.getElementById("search").value.toLowerCase();
+list.innerHTML+=`
+<div class="card">
+<img id="img-${doc.id}" src="${imgs[0]}">
+<div>${imgs.map(i=>`<img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">`).join("")}</div>
+<h4>${p.name}</h4>
+<p>₹${p.price}</p>
 
-  db.collection("products").get().then(res=>{
-    res.forEach(doc=>{
-      let p = doc.data();
+<div id="size-${doc.id}">${sz.map(s=>`<span class="size-btn" onclick="selectSize('${doc.id}',this)">${s}</span>`).join("")}</div>
 
-      if(p.hidden && !isAdmin) return;
+<div id="color-${doc.id}">${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="selectColor('${doc.id}','${imgs[i]||imgs[0]}',this)"></span>`).join("")}</div>
 
-      if(search && !p.name.toLowerCase().includes(search) && !p.category.toLowerCase().includes(search)) return;
+<button class="btn wa" onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
 
-      list.innerHTML += `
-        <div class="product">
-          <img src="${p.image}" style="width:100%;height:auto;max-height:200px;object-fit:contain;display:block;margin:auto;">
-          <h3>${p.name}</h3>
-          <p>₹${p.price}</p>
-          <p><b>${p.category || ''}</b></p>
-          <select id="size-${doc.id}">
-  ${(p.sizes || "").split(",").map(s => `<option>${s}</option>`).join("")}
-</select>
-
-<select id="color-${doc.id}">
-  ${(p.colors || "").split(",").map(c => `<option>${c}</option>`).join("")}
-</select>
-
-          <a href="#" onclick="orderNow('${doc.id}','${p.name}','${p.price}','${p.image}')">
-  <button>Order on WhatsApp</button>
-</a>
-
-          ${isAdmin ? `
-            <br>
-            <button onclick="editProduct('${doc.id}','${p.name}','${p.price}','${p.image}','${p.category || ''}','${p.sizes || ''}','${p.colors || ''}')">Edit</button>
-            <button onclick="deleteProduct('${doc.id}')">Delete</button>
-            <button onclick="toggleHide('${doc.id}', ${p.hidden})">${p.hidden ? 'Unhide' : 'Hide'}</button>
-          ` : ''}
-        </div>
-      `;
-    });
-  });
+${isAdmin?`<button onclick="editProduct('${doc.id}',${JSON.stringify(p)})">Edit</button>
+<button onclick="deleteProduct('${doc.id}')">Delete</button>
+<button onclick="toggleHide('${doc.id}',${p.hidden})">${p.hidden?'Unhide':'Hide'}</button>`:""}
+</div>`;
+});
+});
 }
 
 loadProducts();
-function orderNow(id,name,price,image){
-  let size = document.getElementById("size-"+id)?.value || "";
-  let color = document.getElementById("color-"+id)?.value || "";
-
-  let msg = `I want ${name}
-Price: ₹${price}
-Size: ${size}
-Color: ${color}
-Image: ${image}`;
-
-  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`);
-}
 </script></body>
 </html>
