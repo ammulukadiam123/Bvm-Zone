@@ -42,19 +42,52 @@ if(user.value==="bvm"&&pass.value==="1624"){
 isAdmin=true;loginBox.style.display="none";adminPanel.style.display="block";loadProducts();
 }else alert("Wrong login");
 }
-
 async function saveProduct(){
-let data={name:name.value.trim(),price:price.value.trim(),image:image.value.trim(),category:category.value,sizes:sizes.value,colors:colors.value,hidden:false};
-if(!data.name||!data.price||!data.image){alert("Fill required");return}
-if(editId){await db.collection("products").doc(editId).update(data);editId=null}
-else await db.collection("products").add(data);
-alert("Saved");loadProducts();
+  let name = document.getElementById("name").value.trim();
+  let price = document.getElementById("price").value.trim();
+  let image = document.getElementById("image").value.trim();
+  let category = document.getElementById("category").value;
+  let sizes = document.getElementById("sizes").value;
+  let colors = document.getElementById("colors").value;
+
+  if(!name || !price || !image){
+    alert("Fill required fields");
+    return;
+  }
+
+  let data = {
+    name: name,
+    price: price,
+    image: image,
+    category: category,
+    sizes: sizes,
+    colors: colors,
+    hidden: false
+  };
+
+  if(editId){
+    await db.collection("products").doc(editId).update(data);
+    editId = null;
+  } else {
+    await db.collection("products").add(data);
+  }
+
+  alert("Saved ✅");
+  loadProducts();
 }
 
 async function deleteProduct(id){await db.collection("products").doc(id).delete();loadProducts()}
 async function toggleHide(id,h){await db.collection("products").doc(id).update({hidden:!h});loadProducts()}
 
-function editProduct(id,p){name.value=p.name;price.value=p.price;image.value=p.image;category.value=p.category;sizes.value=p.sizes;colors.value=p.colors;editId=id}
+function editProduct(id,p){
+  document.getElementById("name").value = p.name;
+  document.getElementById("price").value = p.price;
+  document.getElementById("image").value = p.image;
+  document.getElementById("category").value = p.category;
+  document.getElementById("sizes").value = p.sizes;
+  document.getElementById("colors").value = p.colors;
+  editId = id;
+}
 
 function changeImage(id,src){document.getElementById("img-"+id).src=src}
 
