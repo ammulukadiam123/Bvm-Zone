@@ -3,82 +3,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BVM Zone</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
 body{margin:0;font-family:Arial;background:#f5f5f5}
-.header{background:linear-gradient(45deg,black,green);color:white;text-align:center;padding:18px;font-size:24px}
-.card{background:white;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);padding:10px}
-.card img{width:100%;height:180px;object-fit:contain}
-.card{
-  width: 100%;
-  box-sizing: border-box;
-}
-.thumb-container{
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+
+.header{
+  background:url('https://i.ibb.co/6y1Z1kK/banner.jpg') center/cover no-repeat;
+  color:white;
+  text-align:center;
+  padding:40px 10px;
+  font-size:28px;
+  font-weight:bold;
 }
 
-.thumb{
-  width: 50px !important;
-  height: 50px !important;
-  object-fit: cover !important;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-/* FIX LAYOUT */
-.card{
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
+.search-bar{padding:10px}
+.search-bar input{width:100%;padding:8px}
 
-.card h4,
-.card p,
-.card div,
-.card button{
-  width: 100%;
-}
+.filters{display:flex;overflow:auto;gap:8px;padding:10px}
+.filters button{padding:6px 10px;border:none;border-radius:6px;background:#ddd}
 
-#productList .card div{
-  margin-top: 5px;
-}
-
-button{
-  width: 100%;
-  margin-top: 5px;
-}
 #productList{
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  padding:10px;
 }
-.color-btn{width:25px;height:25px;border-radius:50%;margin:3px;border:2px solid #ccc;display:inline-block;cursor:pointer}
-.size-btn{padding:5px 8px;margin:3px;border:1px solid #ccc;border-radius:6px;display:inline-block;cursor:pointer}
+
+.card{
+  background:white;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+
+.main-img{width:100%;height:150px;object-fit:contain}
+
+.thumb-container{display:flex;gap:5px;flex-wrap:wrap}
+.thumb{width:45px;height:45px;object-fit:cover;border-radius:6px;border:1px solid #ccc;cursor:pointer}
+
+.color-btn{width:22px;height:22px;border-radius:50%;margin:3px;border:2px solid #ccc;display:inline-block;cursor:pointer}
+.size-btn{padding:5px 8px;margin:3px;border:1px solid #ccc;border-radius:6px;cursor:pointer}
 .selected{border:2px solid green}
-.btn{width:100%;padding:10px;border:none;border-radius:8px;margin-top:5px}
+
+button{width:100%;margin-top:5px;padding:8px;border:none;border-radius:6px}
 .wa{background:#25D366;color:white}
+.cart-btn{background:black;color:white}
+
 .admin{padding:10px;background:white;margin:10px;border-radius:10px}
 input{width:100%;padding:8px;margin-top:5px}
-</style></head><body><div class="header">BVM Zone 👕</div><div id="loginBox" class="admin" style="display:none;">
+</style></head><body><div class="header">BVM Zone 👕</div><div class="search-bar">
+<input id="search" placeholder="Search products..." oninput="loadProducts()">
+</div><div class="filters">
+<button onclick="filterCategory('')">All</button>
+<button onclick="filterCategory('shirts')">Shirts</button>
+<button onclick="filterCategory('pants')">Pants</button>
+<button onclick="filterCategory('hoodies')">Hoodies</button>
+<button onclick="filterCategory('tshirts')">T-Shirts</button>
+<button onclick="filterCategory('nightpants')">Night Pants</button>
+</div><div id="loginBox" class="admin" style="display:none;">
 <input id="user" placeholder="Username">
 <input id="pass" type="password" placeholder="Password">
 <button onclick="login()">Login</button>
 </div><div id="adminPanel" class="admin" style="display:none;">
-<input id="name" placeholder="Product Name">
+<input id="name" placeholder="Name">
 <input id="price" placeholder="Price">
 <input id="image" placeholder="Images (comma separated)">
 <input id="category" placeholder="Category">
-<input id="sizes" placeholder="Sizes (S,M,L,XL, XXL)">
-<input id="colors" placeholder="Colors (red,black,white,blue,green,pink)">
+<input id="sizes" placeholder="Sizes (S,M,L)">
+<input id="colors" placeholder="Colors (red,black)">
 <button onclick="saveProduct()">Save</button>
-</div><div class="products" id="productList"></div><script>
-const firebaseConfig={apiKey:"AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",authDomain:"bvm-fashion.firebaseapp.com",projectId:"bvm-fashion"};
+</div><div id="productList"></div><script>
+const firebaseConfig={
+  apiKey:"AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",
+  authDomain:"bvm-fashion.firebaseapp.com",
+  projectId:"bvm-fashion"
+};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
 const WA="919848978410";
-let isAdmin=false,editId=null;
+let isAdmin=false,editId=null,currentCategory="";
+let cart=[];
 
 if(location.hash==="#admin") loginBox.style.display="block";
 
@@ -87,52 +91,21 @@ if(user.value==="bvm"&&pass.value==="1624"){
 isAdmin=true;loginBox.style.display="none";adminPanel.style.display="block";loadProducts();
 }else alert("Wrong login");
 }
+
+function filterCategory(cat){currentCategory=cat;loadProducts()}
+
 async function saveProduct(){
-  let name = document.getElementById("name").value.trim();
-  let price = document.getElementById("price").value.trim();
-  let image = document.getElementById("image").value.trim();
-  let category = document.getElementById("category").value;
-  let sizes = document.getElementById("sizes").value;
-  let colors = document.getElementById("colors").value;
-
-  if(!name || !price || !image){
-    alert("Fill required fields");
-    return;
-  }
-
-  let data = {
-    name: name,
-    price: price,
-    image: image,
-    category: category,
-    sizes: sizes,
-    colors: colors,
-    hidden: false
-  };
-
-  if(editId){
-    await db.collection("products").doc(editId).update(data);
-    editId = null;
-  } else {
-    await db.collection("products").add(data);
-  }
-
-  alert("Saved ✅");
-  loadProducts();
+let data={name:name.value,price:price.value,image:image.value,category:category.value,sizes:sizes.value,colors:colors.value,hidden:false};
+if(!data.name||!data.price||!data.image)return alert("Fill fields");
+if(editId){await db.collection("products").doc(editId).update(data);editId=null}
+else await db.collection("products").add(data);
+alert("Saved");loadProducts();
 }
 
 async function deleteProduct(id){await db.collection("products").doc(id).delete();loadProducts()}
 async function toggleHide(id,h){await db.collection("products").doc(id).update({hidden:!h});loadProducts()}
 
-function editProduct(id,p){
-  document.getElementById("name").value = p.name || "";
-  document.getElementById("price").value = p.price || "";
-  document.getElementById("image").value = p.image || "";
-  document.getElementById("category").value = p.category || "";
-  document.getElementById("sizes").value = p.sizes || "";
-  document.getElementById("colors").value = p.colors || "";
-  editId = id;
-}
+function editProduct(id,p){name.value=p.name;price.value=p.price;image.value=p.image;category.value=p.category;sizes.value=p.sizes;colors.value=p.colors;editId=id}
 
 function changeImage(id,src){document.getElementById("img-"+id).src=src}
 
@@ -140,51 +113,61 @@ function selectSize(id,el){document.querySelectorAll(`#size-${id} .size-btn`).fo
 
 function selectColor(id,src,el){changeImage(id,src);document.querySelectorAll(`#color-${id} .color-btn`).forEach(e=>e.classList.remove("selected"));el.classList.add("selected")}
 
+function addToCart(name){cart.push(name);alert("Added to cart")}
+
 function orderNow(id,name,price){
 let size=document.querySelector(`#size-${id} .selected`)?.innerText||"";
 let color=document.querySelector(`#color-${id} .selected`)?.style.background||"";
-let msg=`I want ${name}\nPrice: ₹${price}\nSize: ${size}\nColor: ${color}\nLink: ${location.href}`;
+let msg=`I want ${name}\nPrice: ₹${price}\nSize: ${size}\nColor: ${color}\nCart: ${cart.join(',')}\nLink: ${location.href}`;
 window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`);
 }
 
 function loadProducts(){
 let list=document.getElementById("productList");list.innerHTML="";
+let searchVal=search.value.toLowerCase();
+
 db.collection("products").get().then(res=>{
 res.forEach(doc=>{
-let p=doc.data();if(p.hidden&&!isAdmin)return;
-let imgs=(p.image||"").split(",");let cols=(p.colors||"").split(",");let sz=(p.sizes||"").split(",");
+let p=doc.data();
+if(p.hidden&&!isAdmin)return;
+if(currentCategory && p.category!==currentCategory)return;
+if(searchVal && !p.name.toLowerCase().includes(searchVal))return;
+
+let imgs=(p.image||"").split(",");
+let cols=(p.colors||"").split(",");
+let sz=(p.sizes||"").split(",");
 
 list.innerHTML+=`
 <div class="card">
-  <img id="img-${doc.id}" src="${imgs[0]}">
 
-  <div class="thumb-container">
-    ${imgs.length > 1 ? imgs.map(i=>`
-      <img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">
-    `).join("") : ""}
-  </div>
+<img id="img-${doc.id}" class="main-img" src="${imgs[0]}">
 
-  <h4>${p.name}</h4>
-  <p>₹${p.price}</p>
-
-  <div>
-    ${p.sizes ? p.sizes.split(",").map(s=>`<button>${s}</button>`).join("") : ""}
-  </div>
-
-  <div>
-    ${p.colors ? p.colors.split(",").map(c=>`
-      <span class="color-btn" style="background:${c}"></span>
-    `).join("") : ""}
-  </div>
-
-  <button>Order</button>
-
-  ${isAdmin ? `
-    <button onclick='editProduct("${doc.id}", ${JSON.stringify(p)})'>Edit</button>
-    <button onclick='deleteProduct("${doc.id}")'>Delete</button>
-    <button onclick='hideProduct("${doc.id}")'>Hide</button>
-  ` : ""}
+<div class="thumb-container">
+${imgs.length>1?imgs.map(i=>`<img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">`).join(""):""}
 </div>
+
+<h4>${p.name}</h4>
+<p>₹${p.price}</p>
+
+<div id="size-${doc.id}">
+${sz.map(s=>`<span class="size-btn" onclick="selectSize('${doc.id}',this)">${s}</span>`).join("")}
+</div>
+
+<div id="color-${doc.id}">
+${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="selectColor('${doc.id}','${imgs[i]||imgs[0]}',this)"></span>`).join("")}
+</div>
+
+<button class="cart-btn" onclick="addToCart('${p.name}')">Add to Cart</button>
+<button class="wa" onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
+
+${isAdmin?`
+<button onclick="editProduct('${doc.id}',${JSON.stringify(p)})">Edit</button>
+<button onclick="deleteProduct('${doc.id}')">Delete</button>
+<button onclick="toggleHide('${doc.id}',${p.hidden})">${p.hidden?'Unhide':'Hide'}</button>
+`:""}
+
+</div>`;
+
 });
 });
 }
@@ -192,3 +175,4 @@ list.innerHTML+=`
 loadProducts();
 </script></body>
 </html>
+
