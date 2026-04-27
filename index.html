@@ -7,14 +7,21 @@ body{margin:0;font-family:Arial;background:#f5f5f5}
 .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
 .card{background:white;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);padding:10px}
 .card img{width:100%;height:180px;object-fit:contain}
+.thumb-container{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .thumb{
-  width: 45px;
-  height: 45px;
-  object-fit: cover;
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: cover !important;
   border-radius: 6px;
-  margin: 4px;
   border: 1px solid #ccc;
   cursor: pointer;
+  flex-shrink: 0;
 }
 .color-btn{width:25px;height:25px;border-radius:50%;margin:3px;border:2px solid #ccc;display:inline-block;cursor:pointer}
 .size-btn{padding:5px 8px;margin:3px;border:1px solid #ccc;border-radius:6px;display:inline-block;cursor:pointer}
@@ -120,7 +127,11 @@ let imgs=(p.image||"").split(",");let cols=(p.colors||"").split(",");let sz=(p.s
 list.innerHTML+=`
 <div class="card">
 <img id="img-${doc.id}" src="${imgs[0]}">
-<div> ${imgs.length > 1 ? imgs.map(i=>`<img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">`).join("") : ""}</div>
+</div><div class="thumb-container">
+  ${imgs.length > 1 ? imgs.map(i=>`
+    <img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">
+  `).join("") : ""}
+</div>
 <h4>${p.name}</h4>
 <p>₹${p.price}</p>
 
