@@ -156,25 +156,35 @@ let imgs=(p.image||"").split(",");let cols=(p.colors||"").split(",");let sz=(p.s
 
 list.innerHTML+=`
 <div class="card">
-<img id="img-${doc.id}" src="${imgs[0]}">
-</div><div class="thumb-container">
-  ${imgs.length > 1 ? imgs.map(i=>`
-    <img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">
-  `).join("") : ""}
+  <img id="img-${doc.id}" src="${imgs[0]}">
+
+  <div class="thumb-container">
+    ${imgs.length > 1 ? imgs.map(i=>`
+      <img src="${i}" class="thumb" onclick="changeImage('${doc.id}','${i}')">
+    `).join("") : ""}
+  </div>
+
+  <h4>${p.name}</h4>
+  <p>₹${p.price}</p>
+
+  <div>
+    ${p.sizes ? p.sizes.split(",").map(s=>`<button>${s}</button>`).join("") : ""}
+  </div>
+
+  <div>
+    ${p.colors ? p.colors.split(",").map(c=>`
+      <span class="color-btn" style="background:${c}"></span>
+    `).join("") : ""}
+  </div>
+
+  <button>Order</button>
+
+  ${isAdmin ? `
+    <button onclick='editProduct("${doc.id}", ${JSON.stringify(p)})'>Edit</button>
+    <button onclick='deleteProduct("${doc.id}")'>Delete</button>
+    <button onclick='hideProduct("${doc.id}")'>Hide</button>
+  ` : ""}
 </div>
-<h4>${p.name}</h4>
-<p>₹${p.price}</p>
-
-<div id="size-${doc.id}">${sz.map(s=>`<span class="size-btn" onclick="selectSize('${doc.id}',this)">${s}</span>`).join("")}</div>
-
-<div id="color-${doc.id}">${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="selectColor('${doc.id}','${imgs[i]||imgs[0]}',this)"></span>`).join("")}</div>
-
-<button class="btn wa" onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
-
-${isAdmin?`<button onclick='editProduct("${doc.id}", ${JSON.stringify(p)})'>Edit</button>
-<button onclick="deleteProduct('${doc.id}')">Delete</button>
-<button onclick="toggleHide('${doc.id}',${p.hidden})">${p.hidden?'Unhide':'Hide'}</button>`:""}
-</div>`;
 });
 });
 }
