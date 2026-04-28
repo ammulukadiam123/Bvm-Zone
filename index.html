@@ -62,6 +62,10 @@ input{width:100%;padding:8px;margin-top:5px}
   box-shadow:0 4px 10px rgba(0,0,0,0.2);
   z-index:1000;
 }
+.cart-btn:disabled{
+  background:gray;
+  cursor:not-allowed;
+}
 /* Overlay blur */
 #overlay{
   position:fixed;
@@ -219,19 +223,42 @@ function selectSize(id,el){document.querySelectorAll(`#size-${id} .size-btn`).fo
 function selectColor(id,src,el){changeImage(id,src);document.querySelectorAll(`#color-${id} .color-btn`).forEach(e=>e.classList.remove("selected"));el.classList.add("selected")}
 
 function addToCart(id,name,price){
-  let sizeEl = document.querySelector(`#size-${id} .selected`);
-  if(!sizeEl){
-    alert("Select size first ❗");
-    return;
+  try{
+    // ✅ Size check (compulsory)
+    let sizeEl = document.querySelector(`#size-${id} .selected`);
+    if(!sizeEl){
+      alert("Select size first ❗");
+      return;
+    }
+
+    // ✅ Color (optional)
+    let colorEl = document.querySelector(`#color-${id} .selected`);
+
+    let item = {
+      id: id,
+      name: name,
+      price: price,
+      size: sizeEl.innerText,
+      color: colorEl ? colorEl.style.background : ""
+    };
+
+    // ✅ Add to cart
+    cart.push(item);
+
+    // ✅ Count update
+    document.getElementById("cartCount").innerText = cart.length;
+
+    // ✅ UI update (if exists)
+    if(typeof updateCartUI === "function"){
+      updateCartUI();
+    }
+
+    alert("Added to cart ✅");
+
+  }catch(e){
+    console.error(e);
+    alert("Cart error ❗");
   }
-
-  let colorEl = document.querySelector(`#color-${id} .selected`);
-  let size = sizeEl.innerText;
-  let color = colorEl ? colorEl.style.background : "";
-
-  cart.push({id,name,price,size,color});
-  document.getElementById("cartCount").innerText = cart.length;
-  updateCartUI();
 }
 function updateCartUI(){
   let box = document.getElementById("cartItems");
@@ -269,20 +296,17 @@ function toggleCart(){
 
 function orderNow(id,name,price){
   let sizeEl = document.querySelector(`#size-${id} .selected`);
-  let colorEl = document.querySelector(`#color-${id} .selected`);
-
   if(!sizeEl){
     alert("Please select size ❗");
     return;
   }
 
-  let size = sizeEl.innerText;
-  let color = colorEl ? colorEl.style.background : "";
+  let colorEl = document.querySelector(`#color-${id} .selected`);
 
   let msg = `I want ${name}
 Price: ₹${price}
-Size: ${size}
-Color: ${color}
+Size: ${sizeEl.innerText}
+Color: ${colorEl ? colorEl.style.background : ""}
 Link: ${location.href}`;
 
   window.open(`https://wa.me/919848978410?text=${encodeURIComponent(msg)}`);
@@ -324,7 +348,10 @@ ${sz.map(s=>`<span class="size-btn" onclick="selectSize('${doc.id}',this)">${s}<
 ${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="selectColor('${doc.id}','${imgs[i]||imgs[0]}',this)"></span>`).join("")}
 </div>
 
-<button class="cart-btn" ${p.stock <= 0 ? "disabled" : ""} onclick="addToCart('${doc.id}','${p.name}','${p.price}')">Add to Cart</button>
+<button class="cart-btn" ${p.stock <= 0 ? "disabled" : ""} 
+onclick='addToCart("${doc.id}", ${JSON.stringify(p.name)}, "${p.price}")'>
+Add to Cart
+</button>
 <button class="wa" ${p.stock <= 0 ? "disabled" : ""} onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
 
 ${isAdmin?`
