@@ -130,6 +130,7 @@ input{width:100%;padding:8px;margin-top:5px}
 <input id="name" placeholder="Name">
 <input id="price" placeholder="Price">
 <input id="image" placeholder="Images (comma separated)">
+<input id="stock" placeholder="Stock (number)">
 <input id="category" placeholder="Category">
 <input id="sizes" placeholder="Sizes (S,M,L)">
 <input id="colors" placeholder="Colors (red,black)">
@@ -179,6 +180,7 @@ async function saveProduct(){
     category: categoryVal,
     sizes: sizesVal,
     colors: colorsVal,
+stock: document.getElementById("stock").value || "0",
     hidden: false
   };
 
@@ -217,13 +219,18 @@ function selectSize(id,el){document.querySelectorAll(`#size-${id} .size-btn`).fo
 function selectColor(id,src,el){changeImage(id,src);document.querySelectorAll(`#color-${id} .color-btn`).forEach(e=>e.classList.remove("selected"));el.classList.add("selected")}
 
 function addToCart(id,name,price){
-  let size = document.getElementById("size-"+id)?.value || "";
-  let color = document.getElementById("color-"+id)?.value || "";
+  let sizeEl = document.querySelector(`#size-${id} .selected`);
+  if(!sizeEl){
+    alert("Select size first ❗");
+    return;
+  }
+
+  let colorEl = document.querySelector(`#color-${id} .selected`);
+  let size = sizeEl.innerText;
+  let color = colorEl ? colorEl.style.background : "";
 
   cart.push({id,name,price,size,color});
-
   document.getElementById("cartCount").innerText = cart.length;
-
   updateCartUI();
 }
 function updateCartUI(){
@@ -261,10 +268,24 @@ function toggleCart(){
 }
 
 function orderNow(id,name,price){
-let size=document.querySelector(`#size-${id} .selected`)?.innerText||"";
-let color=document.querySelector(`#color-${id} .selected`)?.style.background||"";
-let msg=`I want ${name}\nPrice: ₹${price}\nSize: ${size}\nColor: ${color}\nCart: ${cart.join(',')}\nLink: ${location.href}`;
-window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`);
+  let sizeEl = document.querySelector(`#size-${id} .selected`);
+  let colorEl = document.querySelector(`#color-${id} .selected`);
+
+  if(!sizeEl){
+    alert("Please select size ❗");
+    return;
+  }
+
+  let size = sizeEl.innerText;
+  let color = colorEl ? colorEl.style.background : "";
+
+  let msg = `I want ${name}
+Price: ₹${price}
+Size: ${size}
+Color: ${color}
+Link: ${location.href}`;
+
+  window.open(`https://wa.me/919848978410?text=${encodeURIComponent(msg)}`);
 }
 
 function loadProducts(){
@@ -292,6 +313,7 @@ ${imgs.length>1?imgs.map(i=>`<img src="${i}" class="thumb" onclick="changeImage(
 </div>
 
 <h4>${p.name}</h4>
+${p.stock <= 0 ? `<p style="color:red;">Out of Stock</p>` : ""}
 <p>₹${p.price}</p>
 
 <div id="size-${doc.id}">
@@ -302,8 +324,8 @@ ${sz.map(s=>`<span class="size-btn" onclick="selectSize('${doc.id}',this)">${s}<
 ${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="selectColor('${doc.id}','${imgs[i]||imgs[0]}',this)"></span>`).join("")}
 </div>
 
-<button class="cart-btn" onclick="addToCart('${p.name}')">Add to Cart</button>
-<button class="wa" onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
+<button class="cart-btn" ${p.stock <= 0 ? "disabled" : ""} onclick="addToCart('${doc.id}','${p.name}','${p.price}')">Add to Cart</button>
+<button class="wa" ${p.stock <= 0 ? "disabled" : ""} onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
 
 ${isAdmin?`
 <button onclick="editProduct('${doc.id}')">Edit</button>
