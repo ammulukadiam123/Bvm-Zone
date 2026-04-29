@@ -104,6 +104,30 @@ input{width:100%;padding:8px;margin-top:5px}
 .cart-box.show{
   right:0;
 }
+.cart-item{
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+  border-bottom:1px solid #ddd;
+  padding-bottom:10px;
+}
+
+.cart-img{
+  width:70px;
+  height:70px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.cart-details h4{
+  margin:0;
+  font-size:14px;
+}
+
+.cart-details p{
+  margin:2px 0;
+  font-size:13px;
+}
 </style></head><body><div class="header">
   BVM Zone 👕 
   <span onclick="toggleCart()" style="float:right;cursor:pointer">
@@ -234,13 +258,16 @@ function addToCart(id,name,price){
     // ✅ Color (optional)
     let colorEl = document.querySelector(`#color-${id} .selected`);
 
-    let item = {
-      id: id,
-      name: name,
-      price: price,
-      size: sizeEl.innerText,
-      color: colorEl ? colorEl.style.background : ""
-    };
+    let img = document.getElementById("img-"+id)?.src || "";
+
+let item = {
+  id: id,
+  name: name,
+  price: price,
+  size: sizeEl.innerText,
+  color: colorEl ? colorEl.style.background : "",
+  image: img
+};
 
     // ✅ Add to cart
     cart.push(item);
@@ -262,23 +289,37 @@ function addToCart(id,name,price){
 }
 function updateCartUI(){
   let box = document.getElementById("cartItems");
-  let total = 0;
+  if(!box) return;
 
   box.innerHTML = "";
 
   cart.forEach((item,index)=>{
-    total += Number(item.price);
-
     box.innerHTML += `
-      <div>
-        ${item.name} - ₹${item.price}<br>
-        Size: ${item.size || "-"} | Color: ${item.color || "-"}<br>
-        <button onclick="removeFromCart(${index})">Remove</button>
+      <div class="cart-item">
+        <img src="${item.image}" class="cart-img">
+
+        <div class="cart-details">
+          <h4>${item.name}</h4>
+          <p>₹${item.price}</p>
+          <p>Size: ${item.size}</p>
+
+          <div style="display:flex;align-items:center;">
+            Color:
+            <span style="
+              width:15px;
+              height:15px;
+              background:${item.color};
+              border-radius:50%;
+              display:inline-block;
+              margin-left:5px;">
+            </span>
+          </div>
+
+          <button onclick="removeFromCart(${index})">Remove</button>
+        </div>
       </div>
     `;
   });
-
-  document.getElementById("cartTotal").innerText = "Total: ₹"+total;
 }
 
 function removeFromCart(i){
