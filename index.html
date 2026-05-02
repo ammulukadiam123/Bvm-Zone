@@ -128,6 +128,33 @@ input{width:100%;padding:8px;margin-top:5px}
   margin:2px 0;
   font-size:13px;
 }
+.modal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:black;
+  z-index:2000;
+}
+
+.modal-content{
+  background:white;
+  height:100%;
+  overflow:auto;
+  padding:15px;
+}
+
+.modal-img{
+  width:100%;
+  height:300px;
+  object-fit:cover;
+}
+
+.close{
+  font-size:25px;
+  float:right;
+  cursor:pointer;
+}
 </style></head><body><div class="header">
   BVM Zone 👕 
   <span onclick="toggleCart()" style="float:right;cursor:pointer">
@@ -143,7 +170,23 @@ input{width:100%;padding:8px;margin-top:5px}
 </div><div style="padding:10px;">
   🛒 Cart: <span id="cartCount">0</span>
 </div>
-<div id="overlay" onclick="toggleCart()"></div><div class="filters">
+<div id="overlay" onclick="toggleCart()"></div>
+<div id="productModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeProduct()">×</span>
+
+    <img id="modalImg" class="modal-img">
+
+    <h2 id="modalName"></h2>
+    <p id="modalPrice"></p>
+
+    <div id="modalSizes"></div>
+    <div id="modalColors"></div>
+
+    <button id="modalCartBtn">Add to Cart</button>
+    <button id="modalOrderBtn">Order</button>
+  </div>
+</div><div class="filters">
 <button onclick="filterCategory('')">All</button>
 <button onclick="filterCategory('shirts')">Shirts</button>
 <button onclick="filterCategory('pants')">Pants</button>
@@ -352,6 +395,49 @@ Link: ${location.href}`;
 
   window.open(`https://wa.me/919848978410?text=${encodeURIComponent(msg)}`);
 }
+function openModal(id,p){
+  document.getElementById("productModal").style.display = "block";
+
+  document.getElementById("modalImg").src = p.image.split(",")[0];
+  document.getElementById("modalName").innerText = p.name;
+  document.getElementById("modalPrice").innerText = "₹"+p.price;
+
+  // Sizes
+  let sizeBox = document.getElementById("modalSizes");
+  sizeBox.innerHTML = "";
+  (p.sizes || "").split(",").forEach(s=>{
+    if(s){
+      sizeBox.innerHTML += `<button onclick="selectModalSize(this)">${s}</button>`;
+    }
+  });
+
+  // Colors
+  let colorBox = document.getElementById("modalColors");
+  colorBox.innerHTML = "";
+  (p.colors || "").split(",").forEach(c=>{
+    if(c){
+      colorBox.innerHTML += `<span onclick="selectModalColor(this)" style="background:${c};width:20px;height:20px;border-radius:50%;display:inline-block;margin:5px;"></span>`;
+    }
+  });
+
+  // Buttons
+  document.getElementById("modalCartBtn").onclick = ()=>addToCart(id,p.name,p.price);
+  document.getElementById("modalOrderBtn").onclick = ()=>orderNow(id,p.name,p.price);
+}
+
+function closeProduct(){
+  document.getElementById("productModal").style.display = "none";
+}
+
+function selectModalSize(el){
+  document.querySelectorAll("#modalSizes button").forEach(b=>b.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+function selectModalColor(el){
+  document.querySelectorAll("#modalColors span").forEach(c=>c.classList.remove("selected"));
+  el.classList.add("selected");
+}
 
 function loadProducts(){
 let list=document.getElementById("productList");list.innerHTML="";
@@ -369,7 +455,7 @@ let cols=(p.colors||"").split(",");
 let sz=(p.sizes||"").split(",");
 
 list.innerHTML+=`
-<div class="card">
+<div class="card" onclick='openModal("${doc.id}", ${JSON.stringify(p)})'>
 
 <img id="img-${doc.id}" class="main-img" src="${imgs[0]}">
 
@@ -390,10 +476,13 @@ ${cols.map((c,i)=>`<span class="color-btn" style="background:${c}" onclick="sele
 </div>
 
 <button class="cart-btn" ${p.stock <= 0 ? "disabled" : ""} 
-onclick='addToCart("${doc.id}", ${JSON.stringify(p.name)}, "${p.price}")'>
+onclick='event.stopPropagation(); addToCart("${doc.id}", ${JSON.stringify(p.name)}, "${p.price}")'>
 Add to Cart
 </button>
-<button class="wa" ${p.stock <= 0 ? "disabled" : ""} onclick="orderNow('${doc.id}','${p.name}','${p.price}')">Order</button>
+<button class="wa" ${p.stock <= 0 ? "disabled" : ""} 
+onclick='event.stopPropagation(); orderNow("${doc.id}", "${p.name}", "${p.price}")'>
+Order
+</button>
 
 ${isAdmin?`
 <button onclick="editProduct('${doc.id}')">Edit</button>
