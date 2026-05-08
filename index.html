@@ -1,7 +1,7 @@
 <!DOCTYPE html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BVM Zone</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
+<title>SS-FASHION HUB</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
 body{margin:0;font-family:Arial;background:#f5f5f5}
 
 .header{
@@ -156,7 +156,7 @@ input{width:100%;padding:8px;margin-top:5px}
   cursor:pointer;
 }
 </style></head><body><div class="header">
-  BVM Zone 👕 
+  SS-FASHION HUB
   <span onclick="toggleCart()" style="float:right;cursor:pointer">
     🛒 (<span id="cartCount">0</span>)
   </span>
@@ -171,20 +171,69 @@ input{width:100%;padding:8px;margin-top:5px}
   🛒 Cart: <span id="cartCount">0</span>
 </div>
 <div id="overlay" onclick="toggleCart()"></div>
-<div id="productModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeProduct()">×</span>
+<div id="productModal" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.8);
+z-index:9999;
+backdrop-filter:blur(5px);
+">
 
-    <img id="modalImg" class="modal-img">
+  <div style="
+  background:white;
+  width:100%;
+  height:100%;
+  overflow:auto;
+  padding:15px;
+  box-sizing:border-box;
+  ">
 
-    <h2 id="modalName"></h2>
-    <p id="modalPrice"></p>
+    <div style="text-align:right;">
+      <span onclick="closeProduct()" style="
+      font-size:30px;
+      cursor:pointer;
+      font-weight:bold;
+      ">
+      ✖
+      </span>
+    </div>
 
-    <div id="modalSizes"></div>
-    <div id="modalColors"></div>
+    <img id="modalImg" style="
+    width:100%;
+    height:320px;
+    object-fit:cover;
+    border-radius:12px;
+    ">
 
-    <button id="modalCartBtn">Add to Cart</button>
-    <button id="modalOrderBtn">Order</button>
+    <div id="modalThumbs" style="
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    overflow:auto;
+    "></div>
+
+    <h2 id="modalName" style="margin-top:15px;"></h2>
+
+    <h3 id="modalPrice" style="color:green;"></h3>
+
+    <div id="modalSizes" style="
+    display:flex;
+    gap:8px;
+    margin-top:15px;
+    flex-wrap:wrap;
+    "></div>
+
+    <div id="modalColors" style="
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+    flex-wrap:wrap;
+    "></div>
+
   </div>
 </div><div class="filters">
 <button onclick="filterCategory('')">All</button>
@@ -217,12 +266,12 @@ const db=firebase.firestore();
 
 const WA="919848978410";
 let isAdmin=false,editId=null,currentCategory="";
-let cart=[];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 if(location.hash==="#admin") loginBox.style.display="block";
 
 function login(){
-if(user.value==="bvm"&&pass.value==="1624"){
+if(user.value==="surya"&&pass.value==="1624"){
 isAdmin=true;loginBox.style.display="none";adminPanel.style.display="block";loadProducts();
 }else alert("Wrong login");
 }
@@ -301,7 +350,7 @@ function addToCart(id,name,price){
     // ✅ Color (optional)
     let colorEl = document.querySelector(`#color-${id} .selected`);
 
-    let img = document.getElementById("img-"+id)?.src || "";
+    let img =  document.getElementById("img-"+id)?.src || "";
 
 let item = {
   id: id,
@@ -313,7 +362,25 @@ let item = {
 };
 
     // ✅ Add to cart
-    cart.push(item);
+    let existing = cart.find(i =>
+  i.id===item.id &&
+  i.size===item.size &&
+  i.color===item.color
+);
+
+if(existing){
+
+  existing.qty += 1;
+
+}else{
+
+  item.qty = 1;
+
+  cart.push(item);
+
+}
+
+localStorage.setItem("cart", JSON.stringify(cart));
 
     // ✅ Count update
     document.getElementById("cartCount").innerText = cart.length;
@@ -367,6 +434,7 @@ function updateCartUI(){
 
 function removeFromCart(i){
   cart.splice(i,1);
+localStorage.setItem("cart", JSON.stringify(cart));
   document.getElementById("cartCount").innerText = cart.length;
   updateCartUI();
 }
@@ -395,38 +463,109 @@ Link: ${location.href}`;
 
   window.open(`https://wa.me/919848978410?text=${encodeURIComponent(msg)}`);
 }
-function openModal(id,p){
-  document.getElementById("productModal").style.display = "block";
+function openModal(id){
 
-  document.getElementById("modalImg").src = p.image.split(",")[0];
-  document.getElementById("modalName").innerText = p.name;
-  document.getElementById("modalPrice").innerText = "₹"+p.price;
+  db.collection("products").doc(id).get().then(doc=>{
 
-  // Sizes
-  let sizeBox = document.getElementById("modalSizes");
-  sizeBox.innerHTML = "";
-  (p.sizes || "").split(",").forEach(s=>{
-    if(s){
-      sizeBox.innerHTML += `<button onclick="selectModalSize(this)">${s}</button>`;
-    }
+    let p = doc.data();
+
+    document.getElementById("productModal").style.display = "block";
+
+    let imgs = (p.images || p.image || "").split(",");
+
+    document.getElementById("modalImg").src = imgs[0];
+
+    // thumbnails
+    let thumbBox = document.getElementById("modalThumbs");
+
+    thumbBox.innerHTML = "";
+
+    imgs.forEach(img=>{
+
+      thumbBox.innerHTML += `
+        <img src="${img}"
+        onclick="document.getElementById('modalImg').src='${img}'"
+        style="
+        width:60px;
+        height:60px;
+        object-fit:cover;
+        border-radius:8px;
+        border:1px solid #ccc;
+        cursor:pointer;
+        ">
+      `;
+
+    });
+
+    // name
+    document.getElementById("modalName").innerText = p.name;
+
+    // price
+    document.getElementById("modalPrice").innerText = "₹" + p.price;
+
+    // sizes
+    let sizeBox = document.getElementById("modalSizes");
+
+    sizeBox.innerHTML = "";
+
+    (p.sizes || "").split(",").forEach(s=>{
+
+      if(s.trim()){
+
+        sizeBox.innerHTML += `
+          <button style="
+          padding:8px 15px;
+          border:none;
+          border-radius:8px;
+          background:#eee;
+          ">
+          ${s}
+          </button>
+        `;
+
+      }
+
+    });
+
+    // colors
+    let colorBox = document.getElementById("modalColors");
+
+    colorBox.innerHTML = "";
+
+    (p.colors || "").split(",").forEach((c,i)=>{
+
+      if(c.trim()){
+
+        let img = imgs[i] || imgs[0];
+
+        colorBox.innerHTML += `
+          <span onclick="
+          document.getElementById('modalImg').src='${img}'
+          "
+          style="
+          width:28px;
+          height:28px;
+          border-radius:50%;
+          background:${c};
+          border:2px solid #ccc;
+          display:inline-block;
+          cursor:pointer;
+          ">
+          </span>
+        `;
+
+      }
+
+    });
+
   });
 
-  // Colors
-  let colorBox = document.getElementById("modalColors");
-  colorBox.innerHTML = "";
-  (p.colors || "").split(",").forEach(c=>{
-    if(c){
-      colorBox.innerHTML += `<span onclick="selectModalColor(this)" style="background:${c};width:20px;height:20px;border-radius:50%;display:inline-block;margin:5px;"></span>`;
-    }
-  });
-
-  // Buttons
-  document.getElementById("modalCartBtn").onclick = ()=>addToCart(id,p.name,p.price);
-  document.getElementById("modalOrderBtn").onclick = ()=>orderNow(id,p.name,p.price);
 }
 
 function closeProduct(){
+
   document.getElementById("productModal").style.display = "none";
+
 }
 
 function selectModalSize(el){
@@ -440,6 +579,9 @@ function selectModalColor(el){
 }
 
 function loadProducts(){
+updateCartUI();
+
+document.getElementById("cartCount").innerText = cart.length;
 let list=document.getElementById("productList");list.innerHTML="";
 let searchVal=search.value.toLowerCase();
 
@@ -455,7 +597,7 @@ let cols=(p.colors||"").split(",");
 let sz=(p.sizes||"").split(",");
 
 list.innerHTML+=`
-<div class="card" onclick='openModal("${doc.id}", ${JSON.stringify(p)})'>
+<div class="card" onclick='openModal("${doc.id}")'>
 
 <img id="img-${doc.id}" class="main-img" src="${imgs[0]}">
 
