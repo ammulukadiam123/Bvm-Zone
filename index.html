@@ -1,7 +1,7 @@
 <!DOCTYPE html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SS-FASHION HUB</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
+<title>BVM ZONE</title><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><style>
 body{margin:0;font-family:Arial;background:#f5f5f5}
 
 .header{
@@ -156,7 +156,7 @@ input{width:100%;padding:8px;margin-top:5px}
   cursor:pointer;
 }
 </style></head><body><div class="header">
-  SS-FASHION HUB
+  BVM ZONE 
   <span onclick="toggleCart()" style="float:right;cursor:pointer">
     🛒 (<span id="cartCount">0</span>)
   </span>
@@ -259,12 +259,12 @@ backdrop-filter:blur(5px);
 const firebaseConfig={
   apiKey:"AIzaSyBKPSTLN_7zU5RjhoiwhRHFyeFDRGce93o",
   authDomain:"bvm-fashion.firebaseapp.com",
-  projectId:"bvm-fashoin"
+  projectId:"bvm-fashion"
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-const WA="+917981046421";
+const WA="917981046421";
 let isAdmin=false,editId=null,currentCategory="";
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -461,7 +461,7 @@ Size: ${sizeEl.innerText}
 Color: ${colorEl ? colorEl.style.background : ""}
 Link: ${location.href}`;
 
-  window.open(`https://wa.me/+917981046421?text=${encodeURIComponent(msg)}`);
+  window.open(`https://wa.me/917981046421?text=${encodeURIComponent(msg)}`);
 }
 function openModal(id){
 
